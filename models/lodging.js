@@ -3,6 +3,7 @@
  */
 
 const { extractValidFields } = require('../lib/validation');
+const mysqlPool = require('../lib/mysqlPool');
 
 /*
  * Schema for a lodging.
@@ -17,3 +18,11 @@ exports.LodgingSchema = {
   price: { required: true },
   ownerid: { required: true }
 };
+
+async function getLodgingsCount() {
+  const [ results, fields ] = await mysqlPool.query(
+    "SELECT COUNT(*) AS count FROM lodgings"
+  );
+  console.log(" -- fields:", fields);
+  return results[0].count;
+}

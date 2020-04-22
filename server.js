@@ -1,5 +1,4 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 
 const logger = require('./lib/logger');
 const { validateAgainstSchema } = require('./lib/validation');
@@ -10,7 +9,7 @@ const port = process.env.PORT || 8000;
 
 const lodgings = require('./lodgings');
 
-app.use(bodyParser.json());
+app.use(express.json());
 
 app.use(logger);
 

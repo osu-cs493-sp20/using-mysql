@@ -23,6 +23,47 @@ async function getLodgingsCount() {
   const [ results, fields ] = await mysqlPool.query(
     "SELECT COUNT(*) AS count FROM lodgings"
   );
-  console.log(" -- fields:", fields);
+  // console.log(" -- fields:", fields);
   return results[0].count;
 }
+
+exports.getLodgingsPage = async function (page) {
+  const pageSize = 10;
+  const count = await getLodgingsCount();
+  const lastPage = Math.ceil(count / pageSize);
+  page = page > lastPage ? lastPage : page;
+  page = page < 1 ? 1 : page;
+  const offset = (page - 1) * pageSize;
+  // const offset = "; DROP TABLE *;"
+
+  /*
+   * SELECT * FROM lodgings
+   * ORDER BY id
+   * LIMIT <offset>,<count>
+   */
+  const [ results ] = await mysqlPool.query(
+    "SELECT * FROM lodgings ORDER BY id LIMIT ?,?",
+    [ offset, pageSize ]
+  );
+
+  return {
+    lodgings: results,
+    page: page,
+    totalPages: lastPage,
+    pageSize: pageSize,
+    count: count
+  };
+};
+
+exports.insertNewLodging = async function (lodging) {
+  const validatedLodging = extractValidFields(
+    lodging,
+    exports.LodgingSchema
+  );
+
+  const [ results ] = await mysqlPool.query(
+    "INSERT INTO lodgings SET ?",
+    validatedLodging
+  );
+  return results.insertId;
+};

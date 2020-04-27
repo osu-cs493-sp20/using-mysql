@@ -2,7 +2,7 @@ const express = require('express');
 
 const logger = require('./lib/logger');
 const { validateAgainstSchema } = require('./lib/validation');
-const { LodgingSchema } = require('./models/lodging');
+const { getLodgingsPage, insertNewLodging, LodgingSchema } = require('./models/lodging');
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -13,20 +13,44 @@ app.use(express.json());
 
 app.use(logger);
 
-app.get('/lodgings', (req, res) => {
-  res.status(200).send({
-    lodgings: lodgings
-  });
+app.get('/lodgings', async (req, res) => {
+  try {
+    console.log(" -- req.query:", req.query);
+    const lodgingsPage = await getLodgingsPage(
+      parseInt(req.query.page) || 1
+    );
+    res.status(200).send(lodgingsPage);
+  } catch (err) {
+    console.error(" -- error:", err);
+    res.status(500).send({
+      error: "Error fetching lodgings list.  Try again later."
+    });
+  }
+
+  // res.status(200).send({
+  //   lodgings: lodgings
+  // });
 });
 
-app.post('/lodgings', (req, res, next) => {
+app.post('/lodgings', async (req, res, next) => {
   console.log("  -- req.body:", req.body);
   if (validateAgainstSchema(req.body, LodgingSchema)) {
-    lodgings.push(req.body);
-    const id = lodgings.length - 1;
-    res.status(201).send({
-      id: id
-    });
+    try {
+      const id = await insertNewLodging(req.body);
+      res.status(201).send({
+        id: id
+      });
+    } catch (err) {
+      console.error(" -- error:", err);
+      res.status(500).send({
+        error: "Error inserting lodging into DB.  Try again later."
+      });
+    }
+    // lodgings.push(req.body);
+    // const id = lodgings.length - 1;
+    // res.status(201).send({
+    //   id: id
+    // });
   } else {
     res.status(400).send({
       err: "Request body does not contain a valid Lodging."
